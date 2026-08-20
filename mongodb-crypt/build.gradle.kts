@@ -15,7 +15,6 @@
  */
 import ProjectExtensions.configureJarManifest
 import ProjectExtensions.configureMavenPublication
-import de.undercouch.gradle.tasks.download.Download
 
 plugins {
     id("project.java")
@@ -47,7 +46,7 @@ configureJarManifest {
  * Jna copy or download resources
  */
 val jnaDownloadsDir = rootProject.file("build/jnaLibs/downloads/").path
-val jnaResourcesDir = rootProject.file("build/jnaLibs/resources/").path
+val jnaResourcesDir = rootProject.file("mongodb-crypt/build/jnaLibs/downloads/").path
 val jnaLibPlatform: String =
     if (com.sun.jna.Platform.RESOURCE_PREFIX.startsWith("darwin")) "darwin" else com.sun.jna.Platform.RESOURCE_PREFIX
 val jnaLibsPath: String = System.getProperty("jnaLibsPath", "${jnaResourcesDir}${jnaLibPlatform}")
@@ -62,10 +61,10 @@ val binariesArchiveName = "libmongocrypt-java.tar.gz"
  * - the archive is downloaded if the revision changes.
  * - the archive is not downloaded if the revision is the same and archive had already been saved in build output.
  */
-val localBinariesArchiveName = "libmongocrypt-java-$downloadRevision.tar.gz"
+val localBinariesArchiveName = "$binariesArchiveName"
 
 val downloadUrl: String =
-    "https://mciuploads.s3.amazonaws.com/libmongocrypt/java/$downloadRevision/$binariesArchiveName"
+    "https://gitlab.cee.redhat.com/pnc-workspace/mongo-crypt/-/raw/main/$downloadRevision/$binariesArchiveName?ref_type=heads&inline=false"
 
 val jnaMapping: Map<String, String> =
     mapOf(
@@ -78,13 +77,7 @@ val jnaMapping: Map<String, String> =
 
 sourceSets { main { java { resources { srcDirs(jnaResourcesDir) } } } }
 
-tasks.register<Download>("downloadJava") {
-    src(downloadUrl)
-    dest("${jnaDownloadsDir}/$localBinariesArchiveName")
-    overwrite(true)
-    /* To make sure we don't download archive with binaries if it hasn't been changed in S3 bucket since last download.*/
-    onlyIfModified(true)
-}
+tasks.register("downloadJava")
 
 tasks.register<Copy>("unzipJava") {
     /*

@@ -38,10 +38,6 @@ tasks.withType<Javadoc> {
     standardDocletOptions.apply {
         author(true)
         version(true)
-        links =
-            listOf(
-                "https://docs.oracle.com/en/java/javase/11/docs/api/",
-                "https://www.reactive-streams.org/reactive-streams-1.0.3-javadoc/")
         tagletPath(rootProject.projectDir.resolve("buildSrc/build/classes/java/main"))
         taglets("com.mongodb.doclet.AtlasManualTaglet")
         taglets("com.mongodb.doclet.ManualTaglet")
@@ -91,16 +87,6 @@ tasks.withType<Javadoc> {
                setSearchUrlPrefix();
                </script>
         """.trimIndent())
-    }
-
-    // Customizations for specific projects
-    afterEvaluate {
-        val docVersion = docVersion(project.version as String)
-        if (project.name != "bson") linksOfflineHelper(docVersion, "bson", standardDocletOptions)
-        if (!project.name.contains("bson") && project.name != "mongodb-driver-core")
-            linksOfflineHelper(docVersion, "mongodb-driver-core", standardDocletOptions)
-        if (!project.name.contains("bson") && project.name != "mongodb-driver-sync")
-            linksOfflineHelper(docVersion, "mongodb-driver-sync", standardDocletOptions)
     }
 }
 
