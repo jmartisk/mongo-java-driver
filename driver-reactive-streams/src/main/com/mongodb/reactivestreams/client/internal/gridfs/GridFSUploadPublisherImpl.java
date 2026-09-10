@@ -27,6 +27,7 @@ import com.mongodb.lang.Nullable;
 import com.mongodb.reactivestreams.client.ClientSession;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.gridfs.GridFSUploadPublisher;
+import org.bson.BsonDocument;
 import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.types.Binary;
@@ -272,12 +273,13 @@ public final class GridFSUploadPublisherImpl implements GridFSUploadPublisher<Vo
     private Mono<DeleteResult> createCancellationMono(final AtomicBoolean terminated, @Nullable final Timeout timeout) {
         Mono<MongoCollection<Document>> chunksCollectionMono = collectionWithTimeoutDeferred(chunksCollection, timeout);
         if (terminated.compareAndSet(false, true)) {
+            BsonDocument chunksFilter = GridFSFilters.eq("files_id", fileId);
             if (clientSession != null) {
                 return chunksCollectionMono.flatMap(collection -> Mono.from(collection
-                        .deleteMany(clientSession, new Document("files_id", fileId))));
+                        .deleteMany(clientSession, chunksFilter)));
             } else {
                 return chunksCollectionMono.flatMap(collection -> Mono.from(collection
-                        .deleteMany(new Document("files_id", fileId))));
+                        .deleteMany(chunksFilter)));
             }
         } else {
             return Mono.empty();
