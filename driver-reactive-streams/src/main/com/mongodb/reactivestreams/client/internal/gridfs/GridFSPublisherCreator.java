@@ -172,7 +172,8 @@ public final class GridFSPublisherCreator {
         notNull("filesCollection", filesCollection);
         notNull("chunksCollection", chunksCollection);
         notNull("id", id);
-        BsonDocument filter = new BsonDocument("_id", id);
+        BsonDocument filter = GridFSFilters.eq("_id", id);
+        BsonDocument chunksFilter = GridFSFilters.eq("files_id", id);
 
         return Mono.defer(()-> {
             Timeout operationTimeout = startTimeout(filesCollection.getTimeout(MILLISECONDS));
@@ -190,9 +191,9 @@ public final class GridFSPublisherCreator {
                     return collectionWithTimeoutMono(chunksCollection, operationTimeout);
                 }).flatMap(wrappedCollection -> {
                     if (clientSession == null) {
-                        return Mono.from(wrappedCollection.deleteMany(new BsonDocument("files_id", id)));
+                        return Mono.from(wrappedCollection.deleteMany(chunksFilter));
                     } else {
-                        return Mono.from(wrappedCollection.deleteMany(clientSession, new BsonDocument("files_id", id)));
+                        return Mono.from(wrappedCollection.deleteMany(clientSession, chunksFilter));
                     }
                 }).then();
             });
@@ -205,7 +206,7 @@ public final class GridFSPublisherCreator {
         notNull("filesCollection", filesCollection);
         notNull("id", id);
         notNull("newFilename", newFilename);
-        BsonDocument filter = new BsonDocument("_id", id);
+        BsonDocument filter = GridFSFilters.eq("_id", id);
         BsonDocument update = new BsonDocument("$set",
                                                new BsonDocument("filename", new BsonString(newFilename)));
         Publisher<UpdateResult> publisher;
