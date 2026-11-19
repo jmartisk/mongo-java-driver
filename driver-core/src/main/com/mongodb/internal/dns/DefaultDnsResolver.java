@@ -17,6 +17,7 @@
 package com.mongodb.internal.dns;
 
 import com.mongodb.MongoConfigurationException;
+import com.mongodb.internal.connection.DomainNameUtils;
 import com.mongodb.lang.Nullable;
 import com.mongodb.spi.dns.DnsClient;
 import com.mongodb.spi.dns.DnsClientProvider;
@@ -24,6 +25,7 @@ import com.mongodb.spi.dns.DnsWithResponseCodeException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
 
@@ -87,8 +89,12 @@ public final class DefaultDnsResolver implements DnsResolver {
             }
 
             for (String srvRecord : srvAttributeValues) {
-                String[] split = srvRecord.split(" ");
+                String[] split = srvRecord.split(" ", 4);
                 String resolvedHost = split[3].endsWith(".") ? split[3].substring(0, split[3].length() - 1) : split[3];
+                if (!DomainNameUtils.isValidSrvHostName(resolvedHost.toLowerCase(Locale.ROOT))) {
+                    throw new MongoConfigurationException(
+                            format("The SRV host name '%s' resolved to a host '%s' which is malformed", srvHost, resolvedHost));
+                }
                 String resolvedHostDomain = resolvedHost.substring(resolvedHost.indexOf('.') + 1);
                 List<String> resolvedHostDomainParts = asList(resolvedHostDomain.split("\\."));
                 if (!sameDomain(srvHostDomainParts, resolvedHostDomainParts)) {
